@@ -199,6 +199,17 @@ public abstract class HttpRpcProtocolGenerator implements ProtocolGenerator {
     }
 
     /**
+     * processRawResponse is used to process raw response before operation deserialization takes place.
+     *
+     * all variables available for middleware's HandleDeserialize func, along with
+     * smithyhttp.Response as response are available in scope.
+     *
+     * @param context the generation context
+     * @param operationShape the operation for which raw response is being processed
+     **/
+    protected abstract void processRawResponse(GenerationContext context, OperationShape operationShape);
+
+    /**
      * Generated deserialization functions for shapes in the passed set. These functions
      * should return a value that can then be serialized by the implementation of
      * {@code deserializeOutputDocument}.
@@ -247,6 +258,9 @@ public abstract class HttpRpcProtocolGenerator implements ProtocolGenerator {
                         "fmt.Errorf(\"unknown transport type %T\", out.RawResponse)"));
             });
             writer.write("");
+
+            // process raw response for the operation Deserializer
+            processRawResponse(context, operation);
 
             writer.openBlock("if response.StatusCode < 200 || response.StatusCode >= 300 {", "}", () -> {
                 writer.write("return out, metadata, $L(response)", errorFunctionName);
